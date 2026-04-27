@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funky Fallacies</title>
+  <style>
+    :root {
+      --bg: #151322;
+      --panel: #242038;
+      --panel-light: #332f4d;
+      --text: #f7f2ff;
+      --muted: #c9c0dc;
+      --accent: #ffcc4d;
+      --accent-2: #ff6b9a;
+      --correct: #34d399;
+      --incorrect: #fb7185;
+      --button: #3f3a5f;
+      --button-hover: #514a7a;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 107, 154, 0.3), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(255, 204, 77, 0.22), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    .app {
+      width: min(100%, 960px);
+      background: rgba(36, 32, 56, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 24px 70px var(--shadow);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1.4rem 1.6rem;
+      background: linear-gradient(135deg, rgba(255, 204, 77, 0.18), rgba(255, 107, 154, 0.2));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.7rem);
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+
+    .subtitle {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 0.65rem 0.9rem;
+      font-weight: 700;
+      min-width: 112px;
+      text-align: center;
+    }
+
+    .pill.timer {
+      color: var(--accent);
+      font-size: 1.15rem;
+    }
+
+    main {
+      padding: clamp(1.2rem, 3vw, 2rem);
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .intro-card, .question-card, .final-card {
+      background: var(--panel-light);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: clamp(1.2rem, 3vw, 2rem);
+    }
+
+    .intro-card p, .final-card p {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 1.05rem;
+    }
+
+    .question-text {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      line-height: 1.45;
+      margin: 0 0 1.4rem;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      border: none;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+
+    .option-button {
+      background: var(--button);
+      color: var(--text);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 1rem;
+      min-height: 76px;
+      text-align: left;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .option-button:hover:not(:disabled) {
+      background: var(--button-hover);
+      transform: translateY(-2px);
+    }
+
+    .option-button.correct {
+      background: rgba(52, 211, 153, 0.22);
+      border-color: var(--correct);
+    }
+
+    .option-button.incorrect {
+      background: rgba(251, 113, 133, 0.22);
+      border-color: var(--incorrect);
+    }
+
+    .feedback {
+      margin-top: 1.2rem;
+      padding: 1rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      line-height: 1.5;
+      min-height: 3.5rem;
+    }
+
+    .feedback strong {
+      color: var(--text);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.3rem;
+      flex-wrap: wrap;
+    }
+
+    .primary-button, .secondary-button {
+      border-radius: 999px;
+      padding: 0.9rem 1.35rem;
+      font-weight: 800;
+      color: #161322;
+    }
+
+    .primary-button {
+      background: var(--accent);
+    }
+
+    .secondary-button {
+      background: #ffffff;
+    }
+
+    .primary-button:hover:not(:disabled), .secondary-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .final-score {
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 900;
+      color: var(--accent);
+      margin: 0.5rem 0;
+      line-height: 1;
+    }
+
+    .final-level {
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+      font-weight: 900;
+      color: var(--text);
+      margin: 1rem 0;
+    }
+
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      overflow: hidden;
+      border-radius: 16px;
+      font-size: 0.95rem;
+    }
+
+    .review-table th, .review-table td {
+      padding: 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .review-table th {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--accent);
+    }
+
+    .review-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 0.75rem;
+      }
+
+      header {
+        align-items: flex-start;
+      }
+
+      .status-bar {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .pill {
+        min-width: auto;
+        flex: 1;
+      }
+
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Funky Fallacies</h1>
+        <p class="subtitle">Spot the dodgy reasoning before the timer runs out.</p>
+      </div>
+      <div class="status-bar" aria-live="polite">
+        <div class="pill" id="questionPill">Question 0/10</div>
+        <div class="pill">Score: <span id="scoreDisplay">0</span></div>
+        <div class="pill timer">Time: <span id="timerDisplay">30</span></div>
+      </div>
+    </header>
+
+    <main>
+      <section id="startScreen" class="screen active">
+        <div class="intro-card">
+          <h2>Can you find the fallacy?</h2>
+          <p>You will be given 10 short arguments. For each one, choose the correct fallacy from six possible answers. A correct answer earns whatever number of seconds remain on the timer. An incorrect answer, or running out of time, earns zero.</p>
+          <p>Latin names are used where the fallacy has a traditional Latin name. Otherwise, the standard English name is used.</p>
+          <button class="primary-button" id="startButton">Start Game</button>
+        </div>
+      </section>
+
+      <section id="gameScreen" class="screen">
+        <div class="question-card">
+          <p class="question-text" id="questionText"></p>
+          <div class="options-grid" id="optionsGrid"></div>
+          <div class="feedback hidden" id="feedback"></div>
+          <div class="controls">
+            <span class="small-note" id="instructionText">Choose carefully — speed matters.</span>
+            <button class="primary-button hidden" id="nextButton">Next Question</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="finalScreen" class="screen">
+        <div class="final-card">
+          <h2>Game Over</h2>
+          <p>Your final score is:</p>
+          <div class="final-score"><span id="finalScore">0</span>/300</div>
+          <div class="final-level" id="finalLevel"></div>
+          <button class="primary-button" id="playAgainButton">Play Again</button>
+          <button class="secondary-button" id="showReviewButton">Show Review</button>
+          <div id="reviewContainer" class="hidden"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const FALLACIES = [
+      {
+        id: "abusive_ad_hominem",
+        label: "Argumentum ad hominem — abusive",
+        shortName: "Abusive ad hominem",
+        category: "relevance",
+        explanation: "This attacks the person with abuse instead of addressing their argument."
+      },
+      {
+        id: "circumstantial_ad_hominem",
+        label: "Argumentum ad hominem — circumstantial",
+        shortName: "Circumstantial ad hominem",
+        category: "relevance",
+        explanation: "This dismisses an argument because of the speaker's circumstances rather than its reasoning."
+      },
+      {
+        id: "tu_quoque",
+        label: "Argumentum ad hominem — tu quoque",
+        shortName: "Tu quoque",
+        category: "relevance",
+        explanation: "This rejects an argument by accusing the speaker of hypocrisy instead of addressing the point."
+      },
+      {
+        id: "ad_baculum",
+        label: "Argumentum ad baculum",
+        shortName: "Appeal to force",
+        category: "relevance",
+        explanation: "This substitutes a threat or unpleasant consequence for a relevant reason."
+      },
+      {
+        id: "ad_populum",
+        label: "Argumentum ad populum",
+        shortName: "Appeal to popularity",
+        category: "relevance",
+        explanation: "This treats popularity or majority belief as evidence that a claim is true or good."
+      },
+      {
+        id: "ad_misericordiam",
+        label: "Argumentum ad misericordiam",
+        shortName: "Appeal to pity",
+        category: "relevance",
+        explanation: "This appeals to sympathy rather than giving a logically relevant reason."
+      },
+      {
+        id: "ad_verecundiam",
+        label: "Argumentum ad verecundiam",
+        shortName: "Appeal to inappropriate authority",
+        category: "relevance",
+        explanation: "This relies on someone who lacks relevant expertise in the area being discussed."
+      },
+      {
+        id: "ad_naturam",
+        label: "Argumentum ad naturam",
+        shortName: "Appeal to nature",
+        category: "relevance",
+        explanation: "This assumes something is good because it is natural, or bad because it is unnatural."
+      },
+      {
+        id: "straw_man",
+        label: "Straw man",
+        shortName: "Straw man",
+        category: "relevance",
+        explanation: "This replaces an opponent's real argument with a weaker or distorted version."
+      },
+      {
+        id: "red_herring",
+        label: "Red herring",
+        shortName: "Red herring",
+        category: "relevance",
+        explanation: "This distracts from the original issue by shifting to a different topic."
+      },
+      {
+        id: "hasty_generalisation",
+        label: "Hasty generalisation",
+        shortName: "Hasty generalisation",
+        category: "weak_induction",
+        explanation: "This draws a broad conclusion from a sample that is too small, biased, or unrepresentative."
+      },
+      {
+        id: "slothful_induction",
+        label: "Slothful induction",
+        shortName: "Slothful induction",
+        category: "weak_induction",
+        explanation: "This refuses to draw a reasonable conclusion even when the evidence strongly supports it."
+      },
+      {
+        id: "faulty_analogy",
+        label: "Faulty analogy",
+        shortName: "Faulty analogy",
+        category: "weak_induction",
+        explanation: "This relies on a comparison where the similarities are too weak or irrelevant to support the conclusion."
+      },
+      {
+        id: "gamblers_fallacy",
+        label: "Gambler's fallacy",
+        shortName: "Gambler's fallacy",
+        category: "weak_induction",
+        explanation: "This assumes past independent outcomes make a future outcome more or less likely."
+      },
+      {
+        id: "post_hoc",
+        label: "Post hoc ergo propter hoc",
+        shortName: "False cause",
+        category: "weak_induction",
+        explanation: "This assumes that because one event happened before another, the first caused the second."
+      },
+      {
+        id: "ad_ignorantiam",
+        label: "Argumentum ad ignorantiam",
+        shortName: "Appeal to ignorance",
+        category: "presumption",
+        explanation: "This treats a lack of evidence as proof that a claim is true or false."
+      },
+      {
+        id: "petitio_principii",
+        label: "Petitio principii",
+        shortName: "Begging the question",
+        category: "presumption",
+        explanation: "This assumes the truth of the conclusion within the premises."
+      },
+      {
+        id: "slippery_slope",
+        label: "Slippery slope",
+        shortName: "Slippery slope",
+        category: "presumption",
+        explanation: "This claims a small step will inevitably cause extreme consequences without justifying the chain."
+      },
+      {
+        id: "composition",
+        label: "Composition",
+        shortName: "Composition",
+        category: "ambiguity_misattribution",
+        explanation: "This assumes that what is true of the parts must be true of the whole."
+      },
+      {
+        id: "division",
+        label: "Division",
+        shortName: "Division",
+        category: "ambiguity_misattribution",
+        explanation: "This assumes that what is true of the whole must be true of each part."
+      },
+      {
+        id: "lexical_ambiguity",
+        label: "Lexical ambiguity",
+        shortName: "Lexical ambiguity",
+        category: "ambiguity_misattribution",
+        explanation: "This turns on a word being used with more than one meaning."
+      },
+      {
+        id: "syntactic_ambiguity",
+        label: "Syntactic ambiguity",
+        shortName: "Syntactic ambiguity",
+        category: "ambiguity_misattribution",
+        explanation: "This turns on a sentence structure that can be interpreted in more than one way."
+      }
+    ];
+
+    const QUESTION_BANK = [
+      // Abusive ad hominem
+      { fallacyId: "abusive_ad_hominem", text: "You can ignore Amara's argument about public transport. She's a complete clown who probably couldn't find the bus stop." },
+      { fallacyId: "abusive_ad_hominem", text: "Leo says the policy will increase costs, but Leo is an ignorant fool, so his criticism is worthless." },
+      { fallacyId: "abusive_ad_hominem", text: "Mia's argument about school lunches is ridiculous because she's a lazy slob with no self-control." },
+      { fallacyId: "abusive_ad_hominem", text: "Don't listen to that scientist's reasoning about energy policy. He's an arrogant windbag." },
+      { fallacyId: "abusive_ad_hominem", text: "Sofia argues that exams should be redesigned, but she's an idiot, so there is no need to consider her point." },
+
+      // Circumstantial ad hominem
+      { fallacyId: "circumstantial_ad_hominem", text: "Of course the dentist says regular check-ups matter. Dentists make money from check-ups, so her argument can be dismissed." },
+      { fallacyId: "circumstantial_ad_hominem", text: "You only support better bike lanes because you ride to school. That means your argument doesn't count." },
+      { fallacyId: "circumstantial_ad_hominem", text: "The principal argues that uniforms create a sense of community, but she works for the school, so we can ignore her reasoning." },
+      { fallacyId: "circumstantial_ad_hominem", text: "His case for higher teacher pay is invalid because he is married to a teacher." },
+      { fallacyId: "circumstantial_ad_hominem", text: "She argues that landlords should maintain rental properties properly, but she rents a house herself, so her view is obviously biased and false." },
+
+      // Tu quoque
+      { fallacyId: "tu_quoque", text: "You say I should reduce my screen time, but you were on your phone all lunchtime yesterday, so your argument is wrong." },
+      { fallacyId: "tu_quoque", text: "Dad says eating too much sugar is unhealthy, but he had dessert last night, so I don't have to take his point seriously." },
+      { fallacyId: "tu_quoque", text: "My coach says I should train more consistently, but she skipped training once last month, so her advice is useless." },
+      { fallacyId: "tu_quoque", text: "You tell me plagiarism is wrong, but you copied homework once in Year 8, so your argument collapses." },
+      { fallacyId: "tu_quoque", text: "The councillor says we should save water, but his own lawn is green, so water conservation must not matter." },
+
+      // Ad baculum
+      { fallacyId: "ad_baculum", text: "You should vote for my proposal, because anyone who opposes it might find their club funding mysteriously disappearing." },
+      { fallacyId: "ad_baculum", text: "This is clearly the best plan. If you disagree, don't expect to be invited onto the committee again." },
+      { fallacyId: "ad_baculum", text: "You ought to admit that I won the debate, unless you want everyone to hear that embarrassing story about you." },
+      { fallacyId: "ad_baculum", text: "My argument is correct, and if you keep challenging it, your next performance review will be very uncomfortable." },
+      { fallacyId: "ad_baculum", text: "You should support the new rule, because students who complain about it may find themselves with extra duties." },
+
+      // Ad populum
+      { fallacyId: "ad_populum", text: "Everyone in our year level thinks this study method works, so it must be the best way to prepare for exams." },
+      { fallacyId: "ad_populum", text: "Millions of people buy this supplement, so it obviously improves your health." },
+      { fallacyId: "ad_populum", text: "That movie must be brilliant because it is the most streamed film of the year." },
+      { fallacyId: "ad_populum", text: "Most voters support the policy, so the policy must be morally right." },
+      { fallacyId: "ad_populum", text: "Everybody knows that homework is useless, so there is no need to investigate the evidence." },
+
+      // Ad misericordiam
+      { fallacyId: "ad_misericordiam", text: "Please give my essay an A. I had a terrible week, and a low mark would make me feel even worse." },
+      { fallacyId: "ad_misericordiam", text: "You should let me onto the team because I will be devastated if I miss out." },
+      { fallacyId: "ad_misericordiam", text: "The judge should dismiss the fine because the defendant cried in court and looked genuinely miserable." },
+      { fallacyId: "ad_misericordiam", text: "My speech deserves to win because I practised for hours and my family will be so disappointed if I lose." },
+      { fallacyId: "ad_misericordiam", text: "You should accept my late assignment because I've been so stressed and I really need a win today." },
+
+      // Ad verecundiam
+      { fallacyId: "ad_verecundiam", text: "A famous footballer says this investment app is safe, so it must be a wise financial choice." },
+      { fallacyId: "ad_verecundiam", text: "This skincare product definitely works because a pop star recommended it in an advertisement." },
+      { fallacyId: "ad_verecundiam", text: "The actor from that hospital drama says this medicine is effective, so we can trust it." },
+      { fallacyId: "ad_verecundiam", text: "My favourite influencer says climate change is exaggerated, so the scientists must be wrong." },
+      { fallacyId: "ad_verecundiam", text: "A champion swimmer supports this brand of laptop, which proves it is the best computer for schoolwork." },
+
+      // Ad naturam
+      { fallacyId: "ad_naturam", text: "This herbal tonic must be safe and good for you because every ingredient is completely natural." },
+      { fallacyId: "ad_naturam", text: "Artificial sweeteners are bad because they are made in a lab rather than found in nature." },
+      { fallacyId: "ad_naturam", text: "This shampoo is better than ordinary shampoo because it contains natural plant extracts." },
+      { fallacyId: "ad_naturam", text: "We should avoid all processed medicine because natural remedies are always healthier." },
+      { fallacyId: "ad_naturam", text: "Organic cotton must be morally superior simply because it is more natural." },
+
+      // Straw man
+      { fallacyId: "straw_man", text: "Ava says schools should reduce homework on weekends. Ben replies, 'So you think students should never study at all?'" },
+      { fallacyId: "straw_man", text: "Liam argues for stricter rules on phone use during class. Noah says, 'Liam wants to ban technology from schools completely.'" },
+      { fallacyId: "straw_man", text: "Grace says the tuckshop should offer healthier options. Zoe replies, 'Grace wants to force everyone to eat lettuce for lunch.'" },
+      { fallacyId: "straw_man", text: "A councillor suggests reducing car access in one street. Her opponent says she wants to make driving illegal." },
+      { fallacyId: "straw_man", text: "Ella says billionaires should pay more tax. Marcus replies, 'Ella thinks no one should be allowed to be successful.'" },
+
+      // Red herring
+      { fallacyId: "red_herring", text: "Asked whether the stadium went over budget, the minister replied that sport brings communities together and inspires young people." },
+      { fallacyId: "red_herring", text: "When questioned about missing the deadline, the student began explaining how stressful Year 11 can be." },
+      { fallacyId: "red_herring", text: "The interviewer asked about pollution in the river. The company spokesperson responded by praising the company's charity work." },
+      { fallacyId: "red_herring", text: "When asked whether the policy was legal, the mayor talked about how many jobs it might create." },
+      { fallacyId: "red_herring", text: "The teacher asked why the assignment was copied. The student replied that the school Wi-Fi is unreliable." },
+
+      // Hasty generalisation
+      { fallacyId: "hasty_generalisation", text: "The first two people I met from that suburb were rude, so everyone from that suburb must be rude." },
+      { fallacyId: "hasty_generalisation", text: "My cousin tried online tutoring once and hated it, so online tutoring doesn't work." },
+      { fallacyId: "hasty_generalisation", text: "I saw three tourists littering at the beach, so tourists clearly don't care about the environment." },
+      { fallacyId: "hasty_generalisation", text: "One electric car caught fire overseas, so electric cars are obviously dangerous." },
+      { fallacyId: "hasty_generalisation", text: "Two students in that class forgot their books, so the whole class is irresponsible." },
+
+      // Slothful induction
+      { fallacyId: "slothful_induction", text: "Every major test result shows the bridge is unsafe, but the engineer says it is still too early to draw any conclusion." },
+      { fallacyId: "slothful_induction", text: "The team has lost by more than 40 points every week, but the coach insists there is no evidence that the strategy is failing." },
+      { fallacyId: "slothful_induction", text: "The smoke alarm is blaring, smoke is filling the hallway, and people are shouting 'fire', but Riley says we should not assume anything yet." },
+      { fallacyId: "slothful_induction", text: "Every survey shows overwhelming support for the change, but the organiser refuses to accept that most people support it." },
+      { fallacyId: "slothful_induction", text: "The plant has not been watered for weeks and is brown and brittle, but Sam says there is no clear reason to think it is dying." },
+
+      // Faulty analogy
+      { fallacyId: "faulty_analogy", text: "A school is like a factory, so students should be treated exactly like products moving along an assembly line." },
+      { fallacyId: "faulty_analogy", text: "Running a country is just like managing a household budget, so the government should never borrow money." },
+      { fallacyId: "faulty_analogy", text: "A brain is like a laptop, so forgetting something must mean your memory file has been deleted." },
+      { fallacyId: "faulty_analogy", text: "A classroom is like a battlefield, so the teacher must defeat the students before they defeat her." },
+      { fallacyId: "faulty_analogy", text: "Friendships are like bank accounts, so every kind act must be repaid with something of equal value." },
+
+      // Gambler's fallacy
+      { fallacyId: "gamblers_fallacy", text: "The coin has landed heads six times in a row, so tails is definitely due on the next toss." },
+      { fallacyId: "gamblers_fallacy", text: "That roulette wheel has not landed on red for ages, which means red is more likely now." },
+      { fallacyId: "gamblers_fallacy", text: "I haven't won a raffle all year, so my chances of winning this one must be much higher." },
+      { fallacyId: "gamblers_fallacy", text: "The same lotto number came up last week, so it is less likely to come up this week." },
+      { fallacyId: "gamblers_fallacy", text: "I've had three bad days in a row, so tomorrow has to be a good day." },
+
+      // Post hoc
+      { fallacyId: "post_hoc", text: "I wore my blue socks before the exam and got a good mark, so the socks caused my success." },
+      { fallacyId: "post_hoc", text: "The school changed the timetable and then attendance dropped, so the timetable change must have caused the drop." },
+      { fallacyId: "post_hoc", text: "After I downloaded the new wallpaper, my laptop crashed, so the wallpaper must have broken it." },
+      { fallacyId: "post_hoc", text: "She started drinking peppermint tea and then recovered from her cold, so the tea cured her." },
+      { fallacyId: "post_hoc", text: "The rooster crowed just before sunrise, so the rooster must have caused the sun to rise." },
+
+      // Ad ignorantiam
+      { fallacyId: "ad_ignorantiam", text: "No one has proved that ghosts do not exist, so ghosts must be real." },
+      { fallacyId: "ad_ignorantiam", text: "There is no evidence that the new app is harmful, so it is definitely safe." },
+      { fallacyId: "ad_ignorantiam", text: "Scientists have not disproved my theory, so my theory must be correct." },
+      { fallacyId: "ad_ignorantiam", text: "You cannot prove that she didn't cheat, so she probably did." },
+      { fallacyId: "ad_ignorantiam", text: "No one has shown that this supplement is useless, so it must work." },
+
+      // Petitio principii
+      { fallacyId: "petitio_principii", text: "This rule is fair because it is the kind of rule that treats everyone fairly." },
+      { fallacyId: "petitio_principii", text: "The book is trustworthy because everything in it is reliable." },
+      { fallacyId: "petitio_principii", text: "We know the policy is justified because it is the right policy to have." },
+      { fallacyId: "petitio_principii", text: "He is lying because he is not telling the truth." },
+      { fallacyId: "petitio_principii", text: "The law should be obeyed because disobeying it would be unlawful." },
+
+      // Slippery slope
+      { fallacyId: "slippery_slope", text: "If we let students listen to music while studying once, soon no one will do any work and the school will collapse academically." },
+      { fallacyId: "slippery_slope", text: "If the library allows one quiet conversation, it will become a noisy food court within a week." },
+      { fallacyId: "slippery_slope", text: "If we extend this deadline by one day, students will stop respecting all rules and chaos will follow." },
+      { fallacyId: "slippery_slope", text: "If we allow phones at lunchtime, the next step will be letting students text during exams." },
+      { fallacyId: "slippery_slope", text: "If the council approves one apartment building, the whole suburb will become a wall of concrete towers." },
+
+      // Composition
+      { fallacyId: "composition", text: "Each player on the team is brilliant, so the team must be brilliant as a unit." },
+      { fallacyId: "composition", text: "Every sentence in the essay is clear, so the essay as a whole must be well argued." },
+      { fallacyId: "composition", text: "Each ingredient tastes good on its own, so the meal made from them must taste good." },
+      { fallacyId: "composition", text: "Every committee member is intelligent, so the committee's decision must be intelligent." },
+      { fallacyId: "composition", text: "Every part of the machine is light, so the whole machine must be light." },
+
+      // Division
+      { fallacyId: "division", text: "The school has an excellent reputation, so every student at the school must be excellent." },
+      { fallacyId: "division", text: "The company is wealthy, so every employee must be wealthy." },
+      { fallacyId: "division", text: "The orchestra sounded magnificent, so every individual musician must have played magnificently." },
+      { fallacyId: "division", text: "The book is famous, so every chapter in it must be famous." },
+      { fallacyId: "division", text: "The class average was very high, so every student must have scored highly." },
+
+      // Lexical ambiguity
+      { fallacyId: "lexical_ambiguity", text: "The sign says 'fine for parking here', so parking here must be perfectly fine." },
+      { fallacyId: "lexical_ambiguity", text: "The argument is sound, so it must have made a noise." },
+      { fallacyId: "lexical_ambiguity", text: "The report said the results were significant, so they must be important in everyday life." },
+      { fallacyId: "lexical_ambiguity", text: "The detective said the suspect was charged, so the suspect must have been full of electricity." },
+      { fallacyId: "lexical_ambiguity", text: "The witness said she saw the point, so she must have visually observed a sharp object." },
+
+      // Syntactic ambiguity
+      { fallacyId: "syntactic_ambiguity", text: "The police arrested the man with the knife, so the police must have been carrying the knife." },
+      { fallacyId: "syntactic_ambiguity", text: "I saw the girl with the telescope, so the girl must have been holding the telescope." },
+      { fallacyId: "syntactic_ambiguity", text: "Old men and women were evacuated first, so only the men were old." },
+      { fallacyId: "syntactic_ambiguity", text: "The teacher discussed the problem with her sister, so her sister must be the problem." },
+      { fallacyId: "syntactic_ambiguity", text: "Students who annoy teachers frequently receive reminders, so the teachers must be frequently annoyed." }
+    ];
+
+    const TOTAL_QUESTIONS = 10;
+    const QUESTION_TIME = 30;
+    const OPTION_COUNT = 6;
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let timeLeft = QUESTION_TIME;
+    let timerInterval = null;
+    let hasAnswered = false;
+    let reviewLog = [];
+
+    const startScreen = document.getElementById("startScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const finalScreen = document.getElementById("finalScreen");
+    const startButton = document.getElementById("startButton");
+    const playAgainButton = document.getElementById("playAgainButton");
+    const showReviewButton = document.getElementById("showReviewButton");
+    const questionPill = document.getElementById("questionPill");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const questionText = document.getElementById("questionText");
+    const optionsGrid = document.getElementById("optionsGrid");
+    const feedback = document.getElementById("feedback");
+    const instructionText = document.getElementById("instructionText");
+    const nextButton = document.getElementById("nextButton");
+    const finalScore = document.getElementById("finalScore");
+    const finalLevel = document.getElementById("finalLevel");
+    const reviewContainer = document.getElementById("reviewContainer");
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function getFallacy(id) {
+      return FALLACIES.find(fallacy => fallacy.id === id);
+    }
+
+    function setScreen(screen) {
+      [startScreen, gameScreen, finalScreen].forEach(element => element.classList.remove("active"));
+      screen.classList.add("active");
+    }
+
+    function chooseQuestions() {
+      const chosenFallacies = shuffle(FALLACIES).slice(0, TOTAL_QUESTIONS);
+      return chosenFallacies.map(fallacy => {
+        const possibleQuestions = QUESTION_BANK.filter(question => question.fallacyId === fallacy.id);
+        return shuffle(possibleQuestions)[0];
+      });
+    }
+
+    function startGame() {
+      currentQuestions = chooseQuestions();
+      currentIndex = 0;
+      score = 0;
+      reviewLog = [];
+      updateHeader();
+      reviewContainer.classList.add("hidden");
+      reviewContainer.innerHTML = "";
+      showReviewButton.textContent = "Show Review";
+      setScreen(gameScreen);
+      loadQuestion();
+    }
+
+    function updateHeader() {
+      questionPill.textContent = `Question ${Math.min(currentIndex + 1, TOTAL_QUESTIONS)}/${TOTAL_QUESTIONS}`;
+      scoreDisplay.textContent = score;
+      timerDisplay.textContent = timeLeft;
+    }
+
+    function buildOptions(correctFallacy) {
+      const sameCategory = FALLACIES.filter(fallacy => fallacy.category === correctFallacy.category && fallacy.id !== correctFallacy.id);
+      const otherFallacies = FALLACIES.filter(fallacy => fallacy.category !== correctFallacy.category && fallacy.id !== correctFallacy.id);
+
+      let distractors = shuffle(sameCategory).slice(0, Math.min(3, sameCategory.length));
+      const remainingNeeded = OPTION_COUNT - 1 - distractors.length;
+      distractors = distractors.concat(shuffle(otherFallacies).slice(0, remainingNeeded));
+
+      return shuffle([correctFallacy, ...distractors]);
+    }
+
+    function loadQuestion() {
+      clearInterval(timerInterval);
+      hasAnswered = false;
+      timeLeft = QUESTION_TIME;
+      const currentQuestion = currentQuestions[currentIndex];
+      const correctFallacy = getFallacy(currentQuestion.fallacyId);
+      const options = buildOptions(correctFallacy);
+
+      questionText.textContent = currentQuestion.text;
+      optionsGrid.innerHTML = "";
+      feedback.classList.add("hidden");
+      feedback.innerHTML = "";
+      nextButton.classList.add("hidden");
+      instructionText.textContent = "Choose carefully — speed matters.";
+
+      options.forEach(fallacy => {
+        const button = document.createElement("button");
+        button.className = "option-button";
+        button.textContent = fallacy.label;
+        button.dataset.fallacyId = fallacy.id;
+        button.addEventListener("click", () => handleAnswer(fallacy.id));
+        optionsGrid.appendChild(button);
+      });
+
+      updateHeader();
+      timerInterval = setInterval(() => {
+        timeLeft -= 1;
+        updateHeader();
+        if (timeLeft <= 0) {
+          handleTimeout();
+        }
+      }, 1000);
+    }
+
+    function handleAnswer(selectedId) {
+      if (hasAnswered) return;
+      hasAnswered = true;
+      clearInterval(timerInterval);
+
+      const currentQuestion = currentQuestions[currentIndex];
+      const correctFallacy = getFallacy(currentQuestion.fallacyId);
+      const selectedFallacy = getFallacy(selectedId);
+      const isCorrect = selectedId === correctFallacy.id;
+      const pointsEarned = isCorrect ? timeLeft : 0;
+      score += pointsEarned;
+
+      reviewLog.push({
+        number: currentIndex + 1,
+        prompt: currentQuestion.text,
+        selected: selectedFallacy.label,
+        correct: correctFallacy.label,
+        result: isCorrect ? "Correct" : "Incorrect",
+        points: pointsEarned
+      });
+
+      revealAnswer(selectedId, correctFallacy.id, isCorrect, pointsEarned);
+      updateHeader();
+
+      if (isCorrect) {
+        instructionText.textContent = `Correct! +${pointsEarned} points.`;
+        setTimeout(() => {
+          moveNext();
+        }, 750);
+      } else {
+        instructionText.textContent = "Incorrect. Study the explanation, then continue.";
+        nextButton.classList.remove("hidden");
+      }
+    }
+
+    function handleTimeout() {
+      if (hasAnswered) return;
+      hasAnswered = true;
+      clearInterval(timerInterval);
+      timeLeft = 0;
+
+      const currentQuestion = currentQuestions[currentIndex];
+      const correctFallacy = getFallacy(currentQuestion.fallacyId);
+
+      reviewLog.push({
+        number: currentIndex + 1,
+        prompt: currentQuestion.text,
+        selected: "No answer — time ran out",
+        correct: correctFallacy.label,
+        result: "Timed out",
+        points: 0
+      });
+
+      revealAnswer(null, correctFallacy.id, false, 0, true);
+      instructionText.textContent = "Time is up. Study the explanation, then continue.";
+      nextButton.classList.remove("hidden");
+      updateHeader();
+    }
+
+    function revealAnswer(selectedId, correctId, isCorrect, pointsEarned, timedOut = false) {
+      const buttons = optionsGrid.querySelectorAll(".option-button");
+      buttons.forEach(button => {
+        button.disabled = true;
+        if (button.dataset.fallacyId === correctId) {
+          button.classList.add("correct");
+        }
+        if (selectedId && button.dataset.fallacyId === selectedId && !isCorrect) {
+          button.classList.add("incorrect");
+        }
+      });
+
+      const correctFallacy = getFallacy(correctId);
+      feedback.classList.remove("hidden");
+
+      if (isCorrect) {
+        feedback.innerHTML = `<strong>Correct:</strong> ${correctFallacy.label}. ${correctFallacy.explanation} You earned <strong>${pointsEarned}</strong> points.`;
+      } else if (timedOut) {
+        feedback.innerHTML = `<strong>Time ran out.</strong> The correct answer was <strong>${correctFallacy.label}</strong>. ${correctFallacy.explanation}`;
+      } else {
+        feedback.innerHTML = `<strong>Not quite.</strong> The correct answer was <strong>${correctFallacy.label}</strong>. ${correctFallacy.explanation}`;
+      }
+    }
+
+    function moveNext() {
+      currentIndex += 1;
+      if (currentIndex >= TOTAL_QUESTIONS) {
+        endGame();
+      } else {
+        loadQuestion();
+      }
+    }
+
+    function getFinalLevel(score) {
+      if (score >= 250) return "You have won a smelly sticker! See Mr Bland.";
+      if (score >= 200) return "Great work - fine fallacy finding!";
+      if (score >= 150) return "Good work - try for better next time!";
+      if (score >= 100) return "Meh. You can do better!";
+      return "You are a fallacy fool! Try again!";
+    }
+
+    function endGame() {
+      clearInterval(timerInterval);
+      setScreen(finalScreen);
+      questionPill.textContent = `Question ${TOTAL_QUESTIONS}/${TOTAL_QUESTIONS}`;
+      timerDisplay.textContent = "0";
+      scoreDisplay.textContent = score;
+      finalScore.textContent = score;
+      finalLevel.textContent = getFinalLevel(score);
+    }
+
+    function toggleReview() {
+      const isHidden = reviewContainer.classList.contains("hidden");
+      if (isHidden) {
+        renderReview();
+        reviewContainer.classList.remove("hidden");
+        showReviewButton.textContent = "Hide Review";
+      } else {
+        reviewContainer.classList.add("hidden");
+        showReviewButton.textContent = "Show Review";
+      }
+    }
+
+    function renderReview() {
+      const rows = reviewLog.map(item => `
+        <tr>
+          <td>${item.number}</td>
+          <td>${escapeHtml(item.prompt)}</td>
+          <td>${escapeHtml(item.selected)}</td>
+          <td>${escapeHtml(item.correct)}</td>
+          <td>${item.result}<br>${item.points} points</td>
+        </tr>
+      `).join("");
+
+      reviewContainer.innerHTML = `
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Prompt</th>
+              <th>Your answer</th>
+              <th>Correct answer</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    startButton.addEventListener("click", startGame);
+    playAgainButton.addEventListener("click", startGame);
+    showReviewButton.addEventListener("click", toggleReview);
+    nextButton.addEventListener("click", moveNext);
+  </script>
+</body>
+</html>
