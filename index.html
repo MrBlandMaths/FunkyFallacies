@@ -797,10 +797,8 @@
       updateHeader();
 
       if (isCorrect) {
-        instructionText.textContent = `Correct! +${pointsEarned} points.`;
-        setTimeout(() => {
-          moveNext();
-        }, 750);
+        instructionText.textContent = `Correct! +${pointsEarned} points. Study the explanation, then continue.`;
+        nextButton.classList.remove("hidden");
       } else {
         instructionText.textContent = "Incorrect. Study the explanation, then continue.";
         nextButton.classList.remove("hidden");
